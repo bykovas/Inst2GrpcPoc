@@ -1,5 +1,6 @@
 using Grpc.Net.Client;
 using Inst2GrpcPoc.gRPCDmzBridge.Services.SearchPayment;
+using Microsoft.Extensions.Logging;
 
 namespace Inst2GrpcPoc.gRPCDmzBridge
 {
@@ -9,36 +10,57 @@ namespace Inst2GrpcPoc.gRPCDmzBridge
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // Configure logging
+            builder.Logging.ClearProviders();
+            builder.Logging.AddConsole();
+
             const string corsPolicy = "_corsAllowAnyOriginPolicy";
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy(corsPolicy, policy =>
                 {
                     policy.AllowAnyOrigin()
-                        .AllowAnyHeader()
-                        .AllowAnyMethod()
-                        .WithExposedHeaders("Grpc-Status", "Grpc-Message", "Grpc-Encoding", "Grpc-Accept-Encoding", "Access-Control-Allow-Origin");
+                          .AllowAnyHeader()
+                          .AllowAnyMethod()
+                          .WithExposedHeaders("Grpc-Status", "Grpc-Message", "Grpc-Encoding", "Grpc-Accept-Encoding");
                 });
             });
-
-            // Additional configuration is required to successfully run gRPC on macOS.
-            // For instructions on how to configure Kestrel and gRPC clients on macOS, visit https://go.microsoft.com/fwlink/?linkid=2099682
 
             // Add services to the container.
             builder.Services.AddGrpc();
 
-            // Hardcoded internal gPRC
+            // Hardcoded internal gRPC server address
             var internalGrpcServerAddress = "http://localhost:5268";
             builder.Services.AddSingleton<GrpcChannel>(s => GrpcChannel.ForAddress(internalGrpcServerAddress));
 
             var app = builder.Build();
 
-            app.UseCors();
+            // Get logger
+            var logger = app.Services.GetRequiredService<ILogger<Program>>();
+
+            // UseCors must be called before UseRouting and UseEndpoints
+            app.UseCors(corsPolicy);
+
+            // Custom middleware for logging CORS preflight requests
+            app.Use(async (context, next) =>
+            {
+                if (context.Request.Method == "OPTIONS")
+                {
+                    logger.LogInformation("Handling CORS preflight request.");
+                }
+                // Adding CORS headers here is unnecessary as it's already configured in AddCors
+                await next();
+            });
+
+            app.UseRouting();
+
             app.UseGrpcWeb(new GrpcWebOptions { DefaultEnabled = true });
 
-            // Configure the HTTP request pipeline.
-            app.MapGrpcService<SearchPaymentService>().EnableGrpcWeb().RequireCors(corsPolicy);
-            app.MapGet("/", () => "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapGrpcService<SearchPaymentService>().EnableGrpcWeb().RequireCors(corsPolicy);
+                endpoints.MapGet("/", () => "Communication with gRPC endpoints must be made through a gRPC client.");
+            });
 
             app.Run();
         }

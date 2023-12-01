@@ -6,6 +6,13 @@
 
 <h1>Hello, world!</h1>
 
+<!-- Add input for the number of payments and a button to initiate the fetch -->
+<div>
+    <label for="numPayments">Enter number of payments to get:</label>
+    <input type="number" id="numPayments" @bind="numberOfPayments" />
+    <button @onclick="GetPayments">Fetch Payments</button>
+</div>
+
 @if (payments != null)
 {
     <table>
@@ -34,16 +41,18 @@
 }
 else
 {
-    <p>Loading...</p>
+    <p>No data to display.</p>
 }
 
 @code {
-    private List<SearchPaymentGrpcReply> payments = new();
+    private List<SearchPaymentGrpcReply> payments;
+    private int numberOfPayments;
 
-    protected override async Task OnInitializedAsync()
+    private async Task GetPayments()
     {
+        payments = new List<SearchPaymentGrpcReply>(); // Reinitialize the list to clear previous data
         var client = new SearchPaymentGrpcService.SearchPaymentGrpcServiceClient(Channel);
-        var call = client.RetrievePaymentsGrpcStream(new SearchPaymentGrpcRequest { NumberOfPayments = 10 });
+        var call = client.RetrievePaymentsGrpcStream(new SearchPaymentGrpcRequest { NumberOfPayments = numberOfPayments });
 
         await foreach (var reply in call.ResponseStream.ReadAllAsync())
         {
