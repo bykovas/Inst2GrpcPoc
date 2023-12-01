@@ -1,4 +1,5 @@
 using Grpc.Net.Client;
+using Inst2GrpcPoc.gRPCDataBridge.Services.Shared;
 using Inst2GrpcPoc.gRPCDmzBridge.Services.SearchPayment;
 using Microsoft.Extensions.Logging;
 
@@ -19,11 +20,10 @@ namespace Inst2GrpcPoc.gRPCDmzBridge
             {
                 options.AddPolicy(corsPolicy, policy =>
                 {
-                    policy.SetIsOriginAllowed(origin => new Uri(origin).Host == "localhost")
-                        .AllowAnyOrigin()
+                    policy.AllowAnyOrigin()
                         .AllowAnyHeader()
                         .AllowAnyMethod()
-                        .WithExposedHeaders("Grpc-Status", "Grpc-Message", "Grpc-Encoding", "Grpc-Accept-Encoding");
+                        .WithExposedHeaders("Grpc-Status", "Grpc-Message", "Grpc-Encoding", "Grpc-Accept-Encoding", "X-Grpc-Web", "User-Agent");
                 });
             });
 
@@ -36,17 +36,31 @@ namespace Inst2GrpcPoc.gRPCDmzBridge
 
             var app = builder.Build();
 
+            var logger = app.Services.GetRequiredService<ILogger<Program>>();
+            app.Use(async (context, next) =>
+            {
+                if (context.Request.Method == "OPTIONS")
+                {
+                    logger.LogInformation("Handling CORS preflight request.");
+                }
+                // Adding CORS headers here is unnecessary as it's already configured in AddCors
+                context.Response.Headers.Add("Access-Control-Allow-Origin", new[] { "http://localhost:5019" });
+                await next();
+            });
+
             app.UseRouting();
-            
+
             app.UseGrpcWeb();
 
-            app.UseCors();
+            app.UseCors(); // Ensure the CORS middleware uses the defined policy
+
             //app.UseHttpsRedirection();
 
 #pragma warning disable ASP0014 // Suggest using top level route registrations
             app.UseEndpoints(ep =>
             {
                 ep.MapGrpcService<SearchPaymentService>().EnableGrpcWeb().RequireCors(corsPolicy);
+                ep.MapGrpcService<PaymentStatusService>().EnableGrpcWeb().RequireCors(corsPolicy);
                 ep.MapGet("/",
                     () =>
                         "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");

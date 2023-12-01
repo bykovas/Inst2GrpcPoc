@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package SharedCodeNamePair;
+
+message CodeNamePairGrpcRequest {
+  string language = 1;
+}
+
+message CodeNamePairGrpc {
+  string code = 1;
+  string name = 2;
+}
+
+message CodeNamePairGrpcReply {
+  repeated CodeNamePairGrpc pairs = 1;
+}
+
+service SharedCodeNamePairGrpcService {
+  rpc GetSharedCodeNamePair(CodeNamePairGrpcRequest) returns (CodeNamePairGrpcReply);
+}

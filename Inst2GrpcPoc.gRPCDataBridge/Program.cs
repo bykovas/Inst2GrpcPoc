@@ -1,5 +1,6 @@
 using Inst2GrpcPoc.gRPCDataBridge.Services;
 using Inst2GrpcPoc.gRPCDataBridge.Services.SearchPayment;
+using Inst2GrpcPoc.gRPCDataBridge.Services.Shared;
 using SearchPayment;
 
 namespace Inst2GrpcPoc.gRPCDataBridge
@@ -20,6 +21,7 @@ namespace Inst2GrpcPoc.gRPCDataBridge
 
             // Configure the HTTP request pipeline.
             app.MapGrpcService<SearchPaymentService>();
+            app.MapGrpcService<PaymentStatusService>();
             app.MapGet("/", () => "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
 
             app.Run();
