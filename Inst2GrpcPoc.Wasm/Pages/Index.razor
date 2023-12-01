@@ -1,0 +1,54 @@
+﻿@page "/"
+@using SearchPayment
+@using Grpc.Core
+@using Grpc.Net.Client
+@inject GrpcChannel Channel
+
+<h1>Hello, world!</h1>
+
+@if (payments != null)
+{
+    <table>
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Sender</th>
+            <th>Receiver</th>
+            <th>Amount</th>
+            <th>Timestamp</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var payment in payments)
+        {
+            <tr>
+                <td>@payment.Id</td>
+                <td>@payment.Sender</td>
+                <td>@payment.Receiver</td>
+                <td>@payment.Amount</td>
+                <td>@payment.Timestamp</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>Loading...</p>
+}
+
+@code {
+    private List<SearchPaymentGrpcReply> payments = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var client = new SearchPaymentGrpcService.SearchPaymentGrpcServiceClient(Channel);
+        var call = client.RetrievePaymentsGrpcStream(new SearchPaymentGrpcRequest { NumberOfPayments = 10 });
+
+        await foreach (var reply in call.ResponseStream.ReadAllAsync())
+        {
+            payments.Add(reply);
+            StateHasChanged();
+        }
+    }
+}

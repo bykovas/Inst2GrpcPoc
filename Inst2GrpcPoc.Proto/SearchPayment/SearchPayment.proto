@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package SearchPayment;
+
+// The message definition for a request
+message SearchPaymentGrpcRequest {
+  int32 numberOfPayments = 1;
+}
+
+// The message definition for a response
+message SearchPaymentGrpcReply {
+  int32 id = 1;
+  string sender = 2;
+  string receiver = 3;
+  double amount = 4;
+  string timestamp = 5;
+}
+
+// The service definition with a server streaming method
+service SearchPaymentGrpcService {
+  rpc RetrievePaymentsGrpcStream (SearchPaymentGrpcRequest) returns (stream SearchPaymentGrpcReply);
+}
