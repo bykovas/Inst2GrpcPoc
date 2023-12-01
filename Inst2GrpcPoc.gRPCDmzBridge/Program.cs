@@ -14,15 +14,16 @@ namespace Inst2GrpcPoc.gRPCDmzBridge
             builder.Logging.ClearProviders();
             builder.Logging.AddConsole();
 
-            const string corsPolicy = "_corsAllowAnyOriginPolicy";
+            const string corsPolicy = "_corsAllowBlazorOriginPolicy";
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy(corsPolicy, policy =>
                 {
-                    policy.AllowAnyOrigin()
-                          .AllowAnyHeader()
-                          .AllowAnyMethod()
-                          .WithExposedHeaders("Grpc-Status", "Grpc-Message", "Grpc-Encoding", "Grpc-Accept-Encoding");
+                    policy.SetIsOriginAllowed(origin => new Uri(origin).Host == "localhost")
+                        .AllowAnyOrigin()
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .WithExposedHeaders("Grpc-Status", "Grpc-Message", "Grpc-Encoding", "Grpc-Accept-Encoding");
                 });
             });
 
@@ -35,32 +36,22 @@ namespace Inst2GrpcPoc.gRPCDmzBridge
 
             var app = builder.Build();
 
-            // Get logger
-            var logger = app.Services.GetRequiredService<ILogger<Program>>();
-
-            // UseCors must be called before UseRouting and UseEndpoints
-            app.UseCors(corsPolicy);
-
-            // Custom middleware for logging CORS preflight requests
-            app.Use(async (context, next) =>
-            {
-                if (context.Request.Method == "OPTIONS")
-                {
-                    logger.LogInformation("Handling CORS preflight request.");
-                }
-                // Adding CORS headers here is unnecessary as it's already configured in AddCors
-                await next();
-            });
-
             app.UseRouting();
+            
+            app.UseGrpcWeb();
 
-            app.UseGrpcWeb(new GrpcWebOptions { DefaultEnabled = true });
+            app.UseCors();
+            //app.UseHttpsRedirection();
 
-            app.UseEndpoints(endpoints =>
+#pragma warning disable ASP0014 // Suggest using top level route registrations
+            app.UseEndpoints(ep =>
             {
-                endpoints.MapGrpcService<SearchPaymentService>().EnableGrpcWeb().RequireCors(corsPolicy);
-                endpoints.MapGet("/", () => "Communication with gRPC endpoints must be made through a gRPC client.");
+                ep.MapGrpcService<SearchPaymentService>().EnableGrpcWeb().RequireCors(corsPolicy);
+                ep.MapGet("/",
+                    () =>
+                        "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
             });
+#pragma warning restore ASP0014 // Suggest using top level route registrations
 
             app.Run();
         }

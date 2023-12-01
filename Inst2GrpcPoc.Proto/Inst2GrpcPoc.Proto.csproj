@@ -16,7 +16,7 @@
   </ItemGroup>
 
 	<ItemGroup>
-		<Protobuf Include="SearchPayment\SearchPayment.proto" GrpcServices="Both" OutputDir="Generated" GrpcNamespace="Inst2GrpcPoc.Grpc.SearchPayments" ProtoNamespace="Inst2GrpcPoc.Proto.SearchPayments" />
+		<Protobuf Include="SearchPayment\SearchPayment.proto" GrpcServices="Both" OutputDir="obj\GeneratedGrpc" GrpcNamespace="Inst2GrpcPoc.Grpc.SearchPayments" ProtoNamespace="Inst2GrpcPoc.Proto.SearchPayments" />
 	</ItemGroup>
 
 </Project>
