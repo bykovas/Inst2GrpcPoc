@@ -1,0 +1,91 @@
+﻿@page "/"
+@using SearchPayment
+@using Grpc.Core
+@using Grpc.Net.Client
+@using SharedCodeNamePair
+@inject GrpcChannel Channel
+@inject IJSRuntime JSRuntime
+
+<h1>Hello, world!</h1>
+
+<select @onchange="OnPaymentTypeChanged">
+    @foreach (var pair in paymentTypes)
+    {
+        <option value="@pair.Code">@pair.Name</option>
+    }
+</select>
+
+<div>
+    <label for="numPayments">Enter number of payments to get:</label>
+    <input type="number" id="numPayments" @bind="numberOfPayments" />
+    <button @onclick="GetPayments">Fetch Payments</button>
+</div>
+
+@if (payments != null)
+{
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Sender</th>
+                <th>Receiver</th>
+                <th>Amount</th>
+                <th>Timestamp</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var payment in payments)
+            {
+                <tr>
+                    <td>@payment.Id</td>
+                    <td>@payment.Sender</td>
+                    <td>@payment.Receiver</td>
+                    <td>@payment.Amount</td>
+                    <td>@payment.Timestamp</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No data to display.</p>
+}
+
+@code {
+    private List<SearchPaymentGrpcReply> payments;
+    private int numberOfPayments;
+    private List<CodeNamePairGrpc> paymentTypes = new List<CodeNamePairGrpc>();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var client = new SharedCodeNamePairGrpcService.SharedCodeNamePairGrpcServiceClient(Channel);
+            var language = await JSRuntime.InvokeAsync<string>("eval", "navigator.language");
+            var request = new CodeNamePairGrpcRequest { Language = language };
+            var response = await client.GetSharedCodeNamePairAsync(request);
+            paymentTypes = response.Pairs.ToList();
+
+            StateHasChanged();
+        }
+    }
+
+    private async Task GetPayments()
+    {
+        payments = new List<SearchPaymentGrpcReply>();
+        var client = new SearchPaymentGrpcService.SearchPaymentGrpcServiceClient(Channel);
+        var call = client.RetrievePaymentsGrpcStream(new SearchPaymentGrpcRequest { NumberOfPayments = numberOfPayments });
+
+        await foreach (var reply in call.ResponseStream.ReadAllAsync())
+        {
+            payments.Add(reply);
+            StateHasChanged();
+        }
+    }
+
+    private void OnPaymentTypeChanged(ChangeEventArgs e)
+    {
+        var selectedPaymentType = e.Value.ToString();
+    }
+}
