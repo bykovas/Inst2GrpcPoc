@@ -13,7 +13,7 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 builder.Services.AddSingleton(s =>
 {
     var httpClient = new HttpClient(new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler()));
-    return GrpcChannel.ForAddress("http://localhost:5026", new GrpcChannelOptions { HttpClient = httpClient });
+    return GrpcChannel.ForAddress("http://localhost:5000", new GrpcChannelOptions { HttpClient = httpClient });
 });
 
 await builder.Build().RunAsync();

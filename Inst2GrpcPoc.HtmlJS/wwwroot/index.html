@@ -1,0 +1,38 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Payment Search</title>
+</head>
+<body>
+    <h1>Hello, world!</h1>
+
+    <select id="paymentTypeSelect">
+        <!-- dynamic -->
+    </select>
+
+    <div>
+        <label for="numPayments">Enter number of payments to get:</label>
+        <input type="number" id="numPayments" />
+        <button id="fetchPaymentsButton">Fetch Payments</button>
+    </div>
+
+    <table id="paymentsTable" style="display:none;">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Sender</th>
+                <th>Receiver</th>
+                <th>Amount</th>
+                <th>Timestamp</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- dynamic -->
+        </tbody>
+    </table>
+
+    <p id="noDataMessage">No data to display.</p>
+
+    <script src="script.js"></script>
+</body>
+</html>
